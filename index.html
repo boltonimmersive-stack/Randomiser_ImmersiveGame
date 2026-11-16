@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Randomiser</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:transparent!important;color:#fff;font-family:Arial,sans-serif;overflow:hidden}
+#app{height:100%;display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:18px;align-items:center;padding:2vh 2vw}
+main{display:flex;flex-direction:column;align-items:center;gap:18px;min-width:0}
+#turn{font-size:clamp(18px,2.4vw,30px);font-weight:900;letter-spacing:.12em;text-shadow:0 2px 12px #000}
+#wrapper{position:relative;width:min(68vh,65vw,700px);aspect-ratio:1;filter:drop-shadow(0 0 22px #704cff88)}
+svg{width:100%;height:100%;transition:transform 4.4s cubic-bezier(.12,.72,.13,1)}
+#pointer{position:absolute;z-index:2;top:-2%;left:50%;transform:translateX(-50%);border-left:18px solid transparent;border-right:18px solid transparent;border-top:38px solid white}
+#hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:19%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 30%,white,#d9d7ff 35%,#4932a0 80%);border:5px solid white;box-shadow:0 0 25px #a78bfa}
+button{cursor:pointer;border:0;border-radius:999px;padding:14px 34px;color:white;font-size:16px;font-weight:900;letter-spacing:.1em;background:linear-gradient(100deg,#287cff,#9c4dff)}
+button:disabled{opacity:.5}
+aside{padding:18px;border-radius:20px;background:linear-gradient(155deg,#101a35e8,#21143de8);border:1px solid #ffffff44;backdrop-filter:blur(12px)}
+h2{font-size:14px;letter-spacing:.14em}.team{padding:14px;border-radius:14px;margin:10px 0;border:2px solid transparent}.blue{background:#1262b9aa}.purple{background:#6332a8aa}.active{border-color:white}.name{font-size:12px;font-weight:bold;letter-spacing:.12em}.score{font-size:40px;font-weight:900}
+#round,#notice{font-size:12px;color:#d6d9ed;text-align:center}
+#challenge{display:none;position:fixed;inset:0;background:transparent;z-index:10}iframe{width:100%;height:100%;border:0;background:transparent}
+@media(max-width:700px){#app{grid-template-columns:1fr;grid-template-rows:1fr auto}.team{display:inline-block;width:48%;margin:3px}.score{font-size:25px}aside{padding:8px}h2,#round{display:none}#wrapper{width:min(56vh,88vw)}}
+</style></head><body>
+<div id="app"><main><div id="turn">TEAM BLUE'S TURN</div><div id="wrapper"><div id="pointer"></div><svg id="wheel" viewBox="0 0 600 600"></svg><div id="hub"></div></div><button id="spin">SPIN THE WHEEL</button><div id="notice">Choose your challenge category.</div></main>
+<aside><h2>TEAM SCORES</h2><div id="blue" class="team blue active"><div class="name">TEAM BLUE</div><div id="bs" class="score">0</div></div><div id="purple" class="team purple"><div class="name">TEAM PURPLE</div><div id="ps" class="score">0</div></div><div id="round">ROUND 1</div></aside></div>
+<div id="challenge"><iframe id="frame" title="Challenge"></iframe></div>
+<script>
+const cats=[["QUICK FIRE","challenges/quick-fire.html","#286ee6"],["IDENTIFY IT","challenges/identify-it.html","#7b43d6"],["SPOT THE ERROR","challenges/spot-the-error.html","#df4f9a"],["PUT IT IN ORDER","challenges/put-it-in-order.html","#e28b35"],["MAKE THE CALL","challenges/make-the-call.html","#159b9a"],["BIG CHALLENGE","challenges/big-challenge.html","#5664cf"]];
+const svg=document.querySelector("svg"),NS="http://www.w3.org/2000/svg";
+function point(a,r){a=(a-90)*Math.PI/180;return[300+r*Math.cos(a),300+r*Math.sin(a)]}
+cats.forEach((c,i)=>{let a=i*60,b=a+60,p=point(a,292),q=point(b,292),path=document.createElementNS(NS,"path");path.setAttribute("d",`M300 300 L${p[0]} ${p[1]} A292 292 0 0 1 ${q[0]} ${q[1]}Z`);path.setAttribute("fill",c[2]);path.setAttribute("stroke","white");path.setAttribute("stroke-width","4");svg.append(path);let xy=point(a+30,190),t=document.createElementNS(NS,"text");t.setAttribute("x",xy[0]);t.setAttribute("y",xy[1]);t.setAttribute("fill","white");t.setAttribute("font-size",c[0].length>12?17:21);t.setAttribute("font-weight","900");t.setAttribute("text-anchor","middle");t.setAttribute("dominant-baseline","middle");t.setAttribute("transform",`rotate(${a+30} ${xy[0]} ${xy[1]})`);t.textContent=c[0];svg.append(t)});
+let team="blue",scores={blue:0,purple:0},round=1,last=-1,busy=false,rotation=0;
+function refresh(){document.getElementById("bs").textContent=scores.blue;document.getElementById("ps").textContent=scores.purple;document.getElementById("blue").classList.toggle("active",team==="blue");document.getElementById("purple").classList.toggle("active",team==="purple");document.getElementById("turn").textContent=`TEAM ${team.toUpperCase()}'S TURN`;document.getElementById("round").textContent=`ROUND ${round}`}
+function launch(i){document.getElementById("app").style.visibility="hidden";document.getElementById("challenge").style.display="block";document.getElementById("frame").src=cats[i][1];document.getElementById("notice").textContent=cats[i][0]+" selected."}
+document.getElementById("spin").onclick=()=>{if(busy)return;busy=true;let opts=cats.map((_,i)=>i).filter(i=>i!==last),i=opts[Math.floor(Math.random()*opts.length)];last=i;let target=rotation+2160+(360-(i*60+30));rotation=target;svg.style.transform=`rotate(${target}deg)`;document.getElementById("spin").disabled=true;document.getElementById("notice").textContent="Selecting challenge…";setTimeout(()=>{busy=false;document.getElementById("spin").disabled=false;launch(i)},4550)};
+function finish(){document.getElementById("frame").src="about:blank";document.getElementById("challenge").style.display="none";document.getElementById("app").style.visibility="visible";team=team==="blue"?"purple":"blue";round++;refresh();document.getElementById("notice").textContent="Next team up. Spin when ready."}
+window.addEventListener("message",e=>{let d=e.data;if(!d||d.source!=="randomiser-challenge")return;if(d.type==="award"){let n=Math.max(0,Math.min(1000,Number(d.points)||0));scores[team]+=n;refresh();document.getElementById("notice").textContent=`${n} points awarded to Team ${team.toUpperCase()}.`}if(d.type==="complete")finish()});
+refresh();
+</script></body></html>
